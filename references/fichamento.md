@@ -1,14 +1,18 @@
 # Fichamento de referências — TP1 (G2, RSNA 2020 Pulmonary Embolism Detection)
 
-> **Nota de integridade acadêmica.** Esta lista foi montada com apoio de IA generativa
-> (Claude), a partir do conhecimento do modelo, **sem acesso à internet neste ambiente**
-> para verificação cruzada via DOI/CrossRef/PubMed. Os dados de autoria, título e
-> veículo abaixo são reportados com boa confiança, mas **o grupo deve confirmar cada
-> entrada (volume, número, páginas, DOI) antes da entrega**, conforme exigido pelo
-> enunciado (§6, "Sobre uso de IA generativa": texto/resultado gerado e não verificado
-> é responsabilidade do grupo). Isto também deve constar na nota de rodapé do artigo
-> final. Uma referência que não resista à verificação deve ser removida ou corrigida
-> — nunca mantida "porque a IA disse".
+> **Nota de integridade acadêmica.** Esta lista foi montada originalmente com apoio de
+> IA generativa (Claude), a partir do conhecimento do modelo, sem acesso à internet.
+> Posteriormente, todas as 11 entradas foram **verificadas via busca web** (autor,
+> título exato, veículo, volume/número, páginas e DOI, quando disponível) — ver
+> `article/references.bib` para os DOIs confirmados. Nessa verificação, **a referência
+> nº 11 (Huang et al., PENet) tinha o título errado** na versão original (dizia
+> "a Scan-level Deep-learning Model for Automatic Diagnosis..."; o título correto é "a
+> Scalable Deep-learning Model for Automated Diagnosis... Using Volumetric CT
+> Imaging") e foi corrigida, junto com a lista completa de autores. As demais 10
+> entradas foram confirmadas como corretas (autor, veículo, volume, páginas batendo
+> com a fonte original). Ainda assim, o grupo deve dar uma conferida final antes da
+> entrega — verificação por IA, mesmo com busca web, não substitui a responsabilidade
+> do grupo (enunciado §6).
 
 ---
 
@@ -205,8 +209,10 @@ ajustado por dobra, já implementada em `_with_preprocessing`.
 ---
 
 ## 11. Huang, S.-C., Kothari, T., Banerjee, I. et al. (2020)
-**"PENet — a scan-level deep-learning model for automatic diagnosis of pulmonary
-embolism."** *npj Digital Medicine*, 3, 61.
+**"PENet — a scalable deep-learning model for automated diagnosis of pulmonary
+embolism using volumetric CT imaging."** *npj Digital Medicine*, 3, 61.
+DOI: 10.1038/s41746-020-0266-y. (Título corrigido após verificação via busca web —
+a versão original desta ficha tinha "scan-level"/"automatic diagnosis", incorreto.)
 
 **O que é:** modelo de aprendizado profundo (CNN 3D) para detecção de EP em nível de
 exame, com um dos conjuntos de dados de referência anteriores ao do RSNA.
