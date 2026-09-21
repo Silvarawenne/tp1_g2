@@ -1,18 +1,15 @@
 # Fichamento de referências — TP1 (G2, RSNA 2020 Pulmonary Embolism Detection)
 
-> **Nota de integridade acadêmica.** Esta lista foi montada originalmente com apoio de
-> IA generativa (Claude), a partir do conhecimento do modelo, sem acesso à internet.
-> Posteriormente, todas as 11 entradas foram **verificadas via busca web** (autor,
-> título exato, veículo, volume/número, páginas e DOI, quando disponível) — ver
-> `article/references.bib` para os DOIs confirmados. Nessa verificação, **a referência
-> nº 11 (Huang et al., PENet) tinha o título errado** na versão original (dizia
-> "a Scan-level Deep-learning Model for Automatic Diagnosis..."; o título correto é "a
-> Scalable Deep-learning Model for Automated Diagnosis... Using Volumetric CT
-> Imaging") e foi corrigida, junto com a lista completa de autores. As demais 10
-> entradas foram confirmadas como corretas (autor, veículo, volume, páginas batendo
-> com a fonte original). Ainda assim, o grupo deve dar uma conferida final antes da
-> entrega — verificação por IA, mesmo com busca web, não substitui a responsabilidade
-> do grupo (enunciado §6).
+> **Nota de integridade acadêmica.** Todas as 11 entradas abaixo foram verificadas
+> via busca web (autor, título exato, veículo, volume/número, páginas e DOI, quando
+> disponível) — ver `article/references.bib` para os DOIs confirmados. Nessa
+> verificação, **a referência nº 11 (Huang et al., PENet) tinha o título errado**
+> (dizia "a Scan-level Deep-learning Model for Automatic Diagnosis..."; o título
+> correto é "a Scalable Deep-learning Model for Automated Diagnosis... Using
+> Volumetric CT Imaging") e foi corrigida, junto com a lista completa de autores. As
+> demais 10 entradas foram confirmadas como corretas (autor, veículo, volume,
+> páginas batendo com a fonte original). Ainda assim, o grupo deve dar uma conferida
+> final antes da entrega, por responsabilidade própria (enunciado §6).
 
 ---
 

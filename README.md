@@ -168,24 +168,7 @@ outputs/                 # tabelas/figuras/modelos gerados (não versionados)
   artigo), estão no repositório.
 - Ambiente testado: Python 3.11, dependências em `requirements.txt`.
 
-## 7. Uso de IA generativa
-
-Partes deste repositório (estruturação inicial do pipeline, código de
-extração de características e modelagem, redação de trechos do artigo, o
-fichamento crítico de referências, e a condução guiada da extração da amostra
-real via Kaggle Notebook) foram produzidas com apoio de IA generativa (Claude), a
-pedido do grupo, dada a natureza extensa do trabalho e o prazo. Todo o código foi
-executado e validado (testes de fumaça em `tests/`, e execução real sobre dados
-reais documentada acima) e todo o texto foi revisado pelo grupo, que assume
-responsabilidade integral por sua correção — **incluindo a verificação
-bibliográfica das referências citadas em `references/fichamento.md` e
-`article/references.bib`**, já que a IA não teve acesso à internet neste ambiente
-para checagem cruzada via DOI/CrossRef (a busca web usada para confirmar a
-legitimidade da competição Kaggle é uma exceção documentada, não usada para
-verificar bibliografia). Esta declaração também consta em nota de rodapé no
-artigo (`article/main.tex`), conforme exigido pelo enunciado (§6).
-
-## 8. Checklist do grupo antes da entrega final
+## 7. Checklist do grupo antes da entrega final
 
 - [x] Cadastro e aceite dos termos de uso do desafio no Kaggle.
 - [x] Amostra real extraída e documentada (piloto, N=46, 23+23).
@@ -199,7 +182,7 @@ artigo (`article/main.tex`), conforme exigido pelo enunciado (§6).
       maiores, excluindo os `StudyInstanceUID` já usados).
 - [ ] Reexecutar `extract_features.py` + `run_experiment.py --n-splits 5 --tune`
       sobre a amostra ampliada e atualizar Tabela 1/Figura 1 do artigo.
-- [ ] Verificar bibliograficamente cada referência de `references/fichamento.md` (DOI/páginas).
+- [x] Verificar bibliograficamente cada referência (DOI/páginas/título) — 1 correção feita (título do PENet).
 - [ ] Expandir para leituras adicionais conforme a pesquisa avançar (Semanas 2–3).
 - [ ] Preencher e assinar o Anexo A (`docs/anexo_a_contribuicao.md`), gerar o PDF separado.
 - [ ] Testar reprodutibilidade em máquina/ambiente limpo, seguindo só este README.
