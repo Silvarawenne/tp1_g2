@@ -1,0 +1,51 @@
+# Dados (nunca versionar dados brutos ou amostras pesadas)
+data/raw/*
+data/sample/*
+!data/raw/.gitkeep
+!data/sample/.gitkeep
+*.dcm
+
+# Saídas geradas (reprodutíveis a partir do código)
+outputs/*
+!outputs/tables/
+!outputs/figures/
+!outputs/models/
+outputs/tables/*
+outputs/figures/*
+outputs/models/*
+!outputs/.gitkeep
+!outputs/tables/.gitkeep
+!outputs/figures/.gitkeep
+!outputs/models/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+# LaTeX
+article/*.aux
+article/*.log
+article/*.out
+article/*.bbl
+article/*.blg
+article/*.synctex.gz
+article/*.fdb_latexmk
+article/*.fls
+article/*.toc
+
+# Sistema
+.DS_Store
+*.log
