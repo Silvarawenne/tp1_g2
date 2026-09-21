@@ -142,12 +142,13 @@ Utilizamos o conjunto \emph{RSNA STR Pulmonary Embolism Detection} (2020), hospe
 no Kaggle (7.279 exames de treino; 4.911 negativos e 2.368 positivos para EP). Como
 os rótulos do teste oficial não são públicos, todo o protocolo é construído sobre o
 conjunto de treino, com partição própria (\S\ref{sec:protocolo}). Dado o volume da
-base (\textasciitilde750~GB), a amostra piloto foi extraída em um Kaggle Notebook
-(dado já residente no servidor, sem download local do conjunto completo): 6 exames
---- 3 positivos e 3 negativos, semente fixa (42) --- com 15 cortes aleatórios por
-exame, por limite de transferência de arquivo do ambiente; critério reprodutível em
-\texttt{README.md} e \texttt{data/raw/real\_sample\_manifest.json}. Cada corte é
-lido com \texttt{pydicom} e convertido para
+base (\textasciitilde750~GB), a amostra piloto foi extraída em duas rodadas por um
+Kaggle Notebook (dado já residente no servidor, sem download local do conjunto
+completo): 22 exames --- 11 positivos e 11 negativos, sementes fixas (42 e 43) ---
+com 6--15 cortes aleatórios por exame (variável por rodada, limitado pela
+transferência de arquivo do ambiente); critério reprodutível em \texttt{README.md}
+e \texttt{data/raw/real\_sample\_manifest.json}. Cada corte é lido com
+\texttt{pydicom} e convertido para
 Hounsfield Units (HU) via $\text{HU} = \text{pixel} \times \text{RescaleSlope} +
 \text{RescaleIntercept}$. Aplicamos janelamento mediastinal/EP (centro 100~HU,
 largura 700~HU), que realça o contraste entre o lúmen vascular opacificado e um
@@ -182,12 +183,10 @@ Random Forest \cite{breiman2001randomforests}, \emph{gradient boosting} (XGBoost
 \subsection{Protocolo experimental e métricas}
 \label{sec:protocolo}
 O particionamento é feito por \textbf{paciente} (nunca por corte ou por exame
-isoladamente), via \texttt{StratifiedGroupKFold} (5 dobras por padrão; a execução
-piloto da Seção~4, com apenas 6 exames, usa 3 dobras, o máximo permitido mantendo ao
-menos um exame de cada classe por dobra de teste), semente fixa. O ajuste de
-hiperparâmetros ocorre por busca em grade dentro de uma validação cruzada aninhada
-(agrupada da mesma forma) quando o tamanho da amostra permite, nunca no conjunto de
-teste da dobra externa. Reportamos AUC-ROC, AUC-PR, sensibilidade, especificidade, F1
+isoladamente), via \texttt{StratifiedGroupKFold} com 5 dobras, semente fixa. O
+ajuste de hiperparâmetros ocorre por busca em grade dentro de uma validação cruzada
+aninhada (agrupada da mesma forma), nunca no conjunto de teste da dobra externa.
+Reportamos AUC-ROC, AUC-PR, sensibilidade, especificidade, F1
 e acurácia balanceada, com média e desvio-padrão entre dobras --- acurácia isolada
 não é reportada como métrica de desempenho, por ser enganosa em uma base com forte
 desbalanceamento de classes \cite{colak2021rsnadataset}.
@@ -196,14 +195,15 @@ desbalanceamento de classes \cite{colak2021rsnadataset}.
 \label{sec:resultados}
 
 \noindent\textit{Nota sobre a amostra (piloto pequeno):} os números abaixo vêm da
-execução real de \texttt{scripts/run\_experiment.py} sobre os 6 exames \textbf{reais}
-descritos em \S3.1, não sintéticos. Com apenas 3 exames por classe, as métricas têm
-variância muito alta e \textbf{não devem ser lidas como benchmark definitivo}:
-servem para comprovar que o pipeline extrai sinal real de dados clínicos genuínos.
+execução real de \texttt{scripts/run\_experiment.py} sobre os 22 exames
+\textbf{reais} descritos em \S3.1, não sintéticos, com ajuste de hiperparâmetros em
+validação aninhada. Com 11 exames por classe, as métricas ainda têm variância
+relevante e \textbf{não devem ser lidas como benchmark definitivo}, mas já são
+suficientes para uma leitura comparativa inicial entre famílias de modelos.
 
 \begin{table}[h]
 \centering
-\caption{Comparação descritor~$\times$~modelo (média~$\pm$~desvio, 3 dobras, 6 exames reais: 3 positivos + 3 negativos).}
+\caption{Comparação descritor~$\times$~modelo (média~$\pm$~desvio, 5 dobras, 22 exames reais: 11 positivos + 11 negativos).}
 \label{tab:resultados}
 \scriptsize
 \renewcommand{\arraystretch}{0.85}
@@ -211,47 +211,47 @@ servem para comprovar que o pipeline extrai sinal real de dados clínicos genuí
 \toprule
 \textbf{Modelo} & \textbf{AUC-ROC} & \textbf{AUC-PR} & \textbf{Bal. Acc.} \\
 \midrule
-MLP raso              & 1,000 $\pm$ 0,000 & 1,000 $\pm$ 0,000 & 0,833 $\pm$ 0,236 \\
-Random Forest          & 1,000 $\pm$ 0,000 & 1,000 $\pm$ 0,000 & 1,000 $\pm$ 0,000 \\
-Regressão logística    & 0,667 $\pm$ 0,471 & 0,833 $\pm$ 0,236 & 0,667 $\pm$ 0,236 \\
-$k$-NN                 & 0,667 $\pm$ 0,471 & 0,833 $\pm$ 0,236 & 0,667 $\pm$ 0,236 \\
-Baseline trivial        & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 \\
-XGBoost                  & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 \\
-SVM (RBF)                & 0,167 $\pm$ 0,236 & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 \\
-SVM (linear)             & 0,000 $\pm$ 0,000 & 0,500 $\pm$ 0,000 & 0,667 $\pm$ 0,236 \\
+Regressão logística    & 0,783 $\pm$ 0,194 & 0,840 $\pm$ 0,183 & 0,633 $\pm$ 0,100 \\
+MLP raso                & 0,767 $\pm$ 0,122 & 0,857 $\pm$ 0,081 & 0,700 $\pm$ 0,194 \\
+$k$-NN                   & 0,600 $\pm$ 0,276 & 0,723 $\pm$ 0,225 & 0,633 $\pm$ 0,251 \\
+SVM (RBF)                 & 0,600 $\pm$ 0,122 & 0,686 $\pm$ 0,112 & 0,500 $\pm$ 0,158 \\
+Random Forest              & 0,575 $\pm$ 0,350 & 0,701 $\pm$ 0,215 & 0,500 $\pm$ 0,279 \\
+Baseline trivial            & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,063 & 0,500 $\pm$ 0,000 \\
+XGBoost                      & 0,300 $\pm$ 0,292 & 0,549 $\pm$ 0,204 & 0,367 $\pm$ 0,145 \\
+SVM (linear)                  & 0,267 $\pm$ 0,162 & 0,514 $\pm$ 0,127 & 0,467 $\pm$ 0,251 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.27\linewidth]{figures/roc_mlp_raso.png}
-\caption{Curva ROC fora-de-dobra do MLP raso (melhor AUC-ROC médio), $N{=}6$.}
+\includegraphics[width=0.32\linewidth]{figures/roc_logreg.png}
+\caption{Curva ROC fora-de-dobra da regressão logística (melhor AUC-ROC médio), $N{=}22$.}
 \label{fig:roc}
 \end{figure}
 
-Random Forest e MLP raso atingiram AUC-ROC~=~1,000, muito acima do baseline trivial
-(0,500); porém SVM linear (0,000) e SVM~RBF (0,167) tiveram desempenho pior que o
-acaso --- evidência de que, com $N{=}6$, o resultado depende de qual exame cai em
-cada dobra, não de mérito real do modelo. Matriz de confusão fora-de-dobra do MLP
-raso: 2~VN, 1~FP, 0~FN, 3~VP (sensibilidade~=~100\%, especificidade~=~66,7\%).
-\textbf{Erro qualitativo:} o único erro foi \texttt{a8bed20c978e} (negativo),
-classificado positivo com confiança máxima --- hipótese: os 15 cortes sorteados
-podem não cobrir a mesma região anatômica dos demais negativos, viés que uma
-amostra maior tende a reduzir.
+Regressão logística e MLP raso ficaram acima do baseline trivial (0,500); XGBoost
+e SVM linear ficaram \emph{abaixo} --- com $N{=}22$ para 8 modelos, alguns
+superajustam às centenas de características extraídas. Matriz de confusão
+fora-de-dobra da regressão logística: 6~VN, 5~FP,
+3~FN, 8~VP (sensibilidade~=~72,7\%, especificidade~=~54,5\%). \textbf{Erro
+qualitativo:} os 8 erros distribuem-se de forma equilibrada entre falsos positivos
+e negativos, sem exame específico como outlier de score extremo --- diferente do
+piloto $N{=}6$, consistente com a hipótese de que mais dados diluem erros
+idiossincráticos de exames individuais.
 
 \section{Conclusão}
 
 Este trabalho estabeleceu a infraestrutura completa e reprodutível de um baseline
 clássico para detecção de EP em angio-TC, validado sobre uma amostra piloto
-\textbf{real} de 6 exames. Os resultados preliminares confirmam que o pipeline
-extrai sinal genuíno de dados clínicos, mas o $N$ é pequeno demais para conclusões
-comparativas robustas --- a alta variância entre modelos (\S4) é, em si, evidência
-dessa limitação. A ausência de segmentação vascular/pulmonar supervisionada é a
-segunda limitação relevante. Trabalho futuro imediato: (i) ampliar a amostra para
-dezenas de exames por classe, com o mesmo pipeline; (ii) avaliar características
-2.5D como alternativa ao pooling estatístico; (iii) comparar este piso clássico
-contra aprendizado profundo (ex.: réplica do PENet \cite{huang2020penet}).
+\textbf{real} de 22 exames (ampliada a partir de um piloto inicial de 6). Regressão
+logística e MLP raso superaram consistentemente o baseline trivial (AUC-ROC~0,78
+e~0,77 vs.\ 0,50); XGBoost e SVM linear ficaram abaixo --- com $N{=}22$ para 8
+modelos, superajuste ainda é esperado. A ausência de segmentação vascular/pulmonar
+supervisionada é a segunda limitação relevante. Trabalho futuro: (i) ampliar a
+amostra para centenas de exames; (ii) seleção de características mais agressiva
+para reduzir superajuste; (iii) comparar contra aprendizado profundo (ex.: réplica
+do PENet \cite{huang2020penet}).
 
 \let\oldthebibliography\thebibliography
 \renewcommand\thebibliography[1]{\oldthebibliography{#1}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}

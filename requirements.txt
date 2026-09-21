@@ -13,6 +13,8 @@ xgboost>=2.0
 lightgbm>=4.3
 
 pydicom>=2.4
+pylibjpeg>=2.0          # necessário para decodificar DICOM com JPEG Lossless (parte do RSNA PE)
+pylibjpeg-libjpeg>=2.1
 SimpleITK>=2.3
 pyradiomics==3.0.1     # 3.1.0 tem metadata quebrada no PyPI (sdist reporta versão errada)
 

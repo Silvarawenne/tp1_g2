@@ -10,28 +10,33 @@ DICOM, extração de cinco famílias de características hand-crafted, sete mode
 clássicos (incluindo o baseline trivial obrigatório) e um protocolo experimental
 sem vazamento de dados (partição por paciente).
 
-## ⚠️ Status atual: piloto real rodado, mas com amostra muito pequena (N=6)
+## ⚠️ Status atual: piloto real rodado (N=22), ainda pequeno para ser um benchmark
 
 O ambiente onde este repositório foi originalmente montado **não tinha acesso ao
 Kaggle** (rede corporativa bloqueava `kaggle.com`). Para contornar isso, a amostra
 real foi extraída **em um Kaggle Notebook** (o dado já reside no servidor do Kaggle,
 sem precisar baixar o conjunto completo — ~750 GB — para uma máquina local) e
-transferida em um zip pequeno (dentro do limite de upload do canal usado).
+transferida em lotes de zip pequenos (dentro do limite de upload do canal usado).
 
 **O que já foi feito com dados reais (não sintéticos):**
-- 6 exames reais do RSNA STR PE Dataset (3 positivos + 3 negativos), 15 cortes por
-  exame, amostrados de forma aleatória estratificada por classe (semente 42).
-  Critério documentado em `data/raw/real_sample_manifest.json` (não versionado —
-  ver `.gitignore` — mas reproduzível a partir do `train.csv` oficial).
-- Extração real das 5 famílias de características e execução real dos 7 modelos
-  (`scripts/extract_features.py` + `scripts/run_experiment.py`).
+- 22 exames reais do RSNA STR PE Dataset (11 positivos + 11 negativos), extraídos
+  em duas rodadas (6 exames com 15 cortes/exame, semente 42; +16 exames com 6
+  cortes/exame, semente 43), amostrados de forma aleatória estratificada por
+  classe. Critério documentado em `data/raw/real_sample_manifest.json` (não
+  versionado — ver `.gitignore` — mas reproduzível a partir do `train.csv` oficial).
+- Extração real das 5 famílias de características e execução real dos 7 modelos,
+  com ajuste de hiperparâmetros em validação aninhada e 5 dobras
+  (`scripts/extract_features.py` + `scripts/run_experiment.py --n-splits 5 --tune`).
 - Os números e a figura no artigo (`article/main.tex`, Seção 4) **são reais**,
   não fabricados — vêm de `outputs/tables/results_summary.csv` desta execução.
+- Alguns arquivos DICOM usam compressão JPEG Lossless, exigindo `pylibjpeg` +
+  `pylibjpeg-libjpeg` (já em `requirements.txt`).
 
-**O que isso NÃO é:** um benchmark robusto. Com apenas 3 exames por classe, os
-resultados têm variância altíssima (alguns modelos com AUC abaixo do acaso) — o
-artigo é explícito sobre isso na Seção 4 e na Conclusão. **Expandir a amostra é a
-próxima prioridade do grupo** (ver checklist ao final).
+**O que isso NÃO é:** um benchmark robusto. Com 22 exames para 8 modelos e
+centenas de características, alguns modelos (XGBoost, SVM linear) ficaram abaixo
+do baseline trivial por superajuste — o artigo é explícito sobre isso na Seção 4 e
+na Conclusão. **Ampliar ainda mais a amostra continua sendo a próxima prioridade**
+(ver checklist ao final).
 
 ## 1. Configuração do ambiente
 
@@ -76,13 +81,14 @@ ambiente de desenvolvimento também não tinha acesso ao Kaggle, o caminho usado
 4. Baixar apenas esse zip pequeno (não o dataset inteiro) e trazer para este
    repositório em `data/raw/`.
 
-**Para ampliar a amostra atual (N=6) para dezenas de exames por classe**, repita o
-mesmo processo aumentando `N_POSITIVE`/`N_NEGATIVE` no notebook — o script já
-existente neste histórico gera o zip, verifica o tamanho antes de baixar e ajusta
-automaticamente o número de cortes por exame para caber no limite de transferência
-disponível. Quanto maior a amostra, mais estável e representativo o protocolo de
-validação cruzada (hoje limitado a 3 dobras pelo N pequeno — ver `src/config.py` e
-`scripts/run_experiment.py --n-splits`).
+**Para ampliar a amostra atual (N=22) ainda mais**, repita o mesmo processo
+aumentando `N_POSITIVE`/`N_NEGATIVE` no notebook (excluindo os `StudyInstanceUID`
+já usados, listados em `data/raw/real_sample_manifest.json`, para não duplicar) — o
+script já usado neste histórico gera o zip, verifica o tamanho antes de baixar e
+ajusta automaticamente o número de cortes por exame para caber no limite de
+transferência disponível. Quanto maior a amostra, menos superajuste e mais
+representativo o protocolo de validação cruzada (já usando 5 dobras e ajuste de
+hiperparâmetros, mas ainda com poucos exemplos por dobra).
 
 O manifesto de um lote de amostra real deve seguir o formato de
 `data/sample/synthetic_manifest.json` (lista de objetos com `patient_id`,
@@ -94,15 +100,14 @@ O manifesto de um lote de amostra real deve seguir o formato de
 # 0) (opcional) gerar dados sintéticos de exemplo, só para validar o pipeline
 python scripts/generate_synthetic_sample.py
 
-# 1) extrair características (exemplo com a amostra real de 6 exames já usada)
+# 1) extrair características (amostra real de 22 exames já usada no artigo)
 python scripts/extract_features.py \
     --manifest data/raw/real_sample_manifest.json \
     --data-root data/raw/real_sample_pilot \
     --out outputs/tables/features_real_pilot.parquet
 
-# 2) treinar e avaliar todos os modelos (baseline trivial + 6 clássicos)
-# --n-splits 3 porque N=6 (3 por classe); ao ampliar a amostra, usar --n-splits 5 (padrão) e --tune
-python scripts/run_experiment.py --features outputs/tables/features_real_pilot.parquet --n-splits 3
+# 2) treinar e avaliar todos os modelos (baseline trivial + 7 clássicos), com tuning
+python scripts/run_experiment.py --features outputs/tables/features_real_pilot.parquet --n-splits 5 --tune
 ```
 
 Saídas geradas:
@@ -180,13 +185,15 @@ artigo (`article/main.tex`), conforme exigido pelo enunciado (§6).
 ## 8. Checklist do grupo antes da entrega final
 
 - [x] Cadastro e aceite dos termos de uso do desafio no Kaggle.
-- [x] Amostra real extraída e documentada (piloto pequeno, N=6).
+- [x] Amostra real extraída e documentada (piloto pequeno, N=22, 11+11).
 - [x] Pipeline executado de ponta a ponta sobre dados reais; resultados reais no artigo.
+- [x] Validação cruzada com 5 dobras e ajuste de hiperparâmetros (`--tune`).
 - [x] Ao menos uma figura (curva ROC) e análise de erro qualitativa no artigo.
 - [x] Limite de 4 páginas do artigo (conferido após inserir os resultados reais).
-- [ ] **Ampliar a amostra real** para dezenas de exames por classe (prioridade nº 1
-      — os resultados atuais têm N pequeno demais para serem conclusivos; repetir
-      o processo da Seção 2 com `N_POSITIVE`/`N_NEGATIVE` maiores).
+- [ ] **Ampliar a amostra real ainda mais** (prioridade nº 1 — 22 exames para 8
+      modelos ainda causa superajuste visível em alguns modelos; repetir o
+      processo da Seção 2 com `N_POSITIVE`/`N_NEGATIVE` maiores, excluindo os
+      `StudyInstanceUID` já usados).
 - [ ] Reexecutar `extract_features.py` + `run_experiment.py --n-splits 5 --tune`
       sobre a amostra ampliada e atualizar Tabela 1/Figura 1 do artigo.
 - [ ] Verificar bibliograficamente cada referência de `references/fichamento.md` (DOI/páginas).
