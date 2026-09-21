@@ -10,7 +10,7 @@ DICOM, extração de cinco famílias de características hand-crafted, sete mode
 clássicos (incluindo o baseline trivial obrigatório) e um protocolo experimental
 sem vazamento de dados (partição por paciente).
 
-## ⚠️ Status atual: piloto real rodado (N=22), ainda pequeno para ser um benchmark
+## ⚠️ Status atual: piloto real rodado (N=46), ainda pequeno para ser um benchmark
 
 O ambiente onde este repositório foi originalmente montado **não tinha acesso ao
 Kaggle** (rede corporativa bloqueava `kaggle.com`). Para contornar isso, a amostra
@@ -19,9 +19,9 @@ sem precisar baixar o conjunto completo — ~750 GB — para uma máquina local)
 transferida em lotes de zip pequenos (dentro do limite de upload do canal usado).
 
 **O que já foi feito com dados reais (não sintéticos):**
-- 22 exames reais do RSNA STR PE Dataset (11 positivos + 11 negativos), extraídos
-  em duas rodadas (6 exames com 15 cortes/exame, semente 42; +16 exames com 6
-  cortes/exame, semente 43), amostrados de forma aleatória estratificada por
+- 46 exames reais do RSNA STR PE Dataset (23 positivos + 23 negativos), extraídos
+  em três rodadas (6 exames/15 cortes, semente 42; +16 exames/6 cortes, semente 43;
+  +24 exames/4 cortes, semente 44), amostrados de forma aleatória estratificada por
   classe. Critério documentado em `data/raw/real_sample_manifest.json` (não
   versionado — ver `.gitignore` — mas reproduzível a partir do `train.csv` oficial).
 - Extração real das 5 famílias de características e execução real dos 7 modelos,
@@ -32,11 +32,14 @@ transferida em lotes de zip pequenos (dentro do limite de upload do canal usado)
 - Alguns arquivos DICOM usam compressão JPEG Lossless, exigindo `pylibjpeg` +
   `pylibjpeg-libjpeg` (já em `requirements.txt`).
 
-**O que isso NÃO é:** um benchmark robusto. Com 22 exames para 8 modelos e
-centenas de características, alguns modelos (XGBoost, SVM linear) ficaram abaixo
-do baseline trivial por superajuste — o artigo é explícito sobre isso na Seção 4 e
-na Conclusão. **Ampliar ainda mais a amostra continua sendo a próxima prioridade**
-(ver checklist ao final).
+**O que isso já mostra, com mais confiança que os pilotos anteriores:** um piso de
+desempenho modesto e honesto — o melhor modelo (Random Forest) atinge apenas
+AUC-ROC≈0,61, e metade dos modelos fica abaixo do baseline trivial por
+superajuste. Isso é consistente com o que se espera de características
+hand-crafted sem segmentação vascular sobre poucas dezenas de exames — exatamente
+o tipo de "piso a ser superado" que o TP pede. **Ainda não é robusto o bastante
+para conclusões definitivas**; ampliar a amostra continua sendo a prioridade
+seguinte (ver checklist ao final).
 
 ## 1. Configuração do ambiente
 
@@ -81,7 +84,7 @@ ambiente de desenvolvimento também não tinha acesso ao Kaggle, o caminho usado
 4. Baixar apenas esse zip pequeno (não o dataset inteiro) e trazer para este
    repositório em `data/raw/`.
 
-**Para ampliar a amostra atual (N=22) ainda mais**, repita o mesmo processo
+**Para ampliar a amostra atual (N=46) ainda mais**, repita o mesmo processo
 aumentando `N_POSITIVE`/`N_NEGATIVE` no notebook (excluindo os `StudyInstanceUID`
 já usados, listados em `data/raw/real_sample_manifest.json`, para não duplicar) — o
 script já usado neste histórico gera o zip, verifica o tamanho antes de baixar e
@@ -100,7 +103,7 @@ O manifesto de um lote de amostra real deve seguir o formato de
 # 0) (opcional) gerar dados sintéticos de exemplo, só para validar o pipeline
 python scripts/generate_synthetic_sample.py
 
-# 1) extrair características (amostra real de 22 exames já usada no artigo)
+# 1) extrair características (amostra real de 46 exames já usada no artigo)
 python scripts/extract_features.py \
     --manifest data/raw/real_sample_manifest.json \
     --data-root data/raw/real_sample_pilot \
@@ -185,15 +188,15 @@ artigo (`article/main.tex`), conforme exigido pelo enunciado (§6).
 ## 8. Checklist do grupo antes da entrega final
 
 - [x] Cadastro e aceite dos termos de uso do desafio no Kaggle.
-- [x] Amostra real extraída e documentada (piloto pequeno, N=22, 11+11).
+- [x] Amostra real extraída e documentada (piloto, N=46, 23+23).
 - [x] Pipeline executado de ponta a ponta sobre dados reais; resultados reais no artigo.
 - [x] Validação cruzada com 5 dobras e ajuste de hiperparâmetros (`--tune`).
 - [x] Ao menos uma figura (curva ROC) e análise de erro qualitativa no artigo.
 - [x] Limite de 4 páginas do artigo (conferido após inserir os resultados reais).
-- [ ] **Ampliar a amostra real ainda mais** (prioridade nº 1 — 22 exames para 8
-      modelos ainda causa superajuste visível em alguns modelos; repetir o
-      processo da Seção 2 com `N_POSITIVE`/`N_NEGATIVE` maiores, excluindo os
-      `StudyInstanceUID` já usados).
+- [ ] **Ampliar a amostra real ainda mais** (prioridade nº 1 — 46 exames para 8
+      modelos e ~500 características ainda causa superajuste visível em alguns
+      modelos; repetir o processo da Seção 2 com `N_POSITIVE`/`N_NEGATIVE`
+      maiores, excluindo os `StudyInstanceUID` já usados).
 - [ ] Reexecutar `extract_features.py` + `run_experiment.py --n-splits 5 --tune`
       sobre a amostra ampliada e atualizar Tabela 1/Figura 1 do artigo.
 - [ ] Verificar bibliograficamente cada referência de `references/fichamento.md` (DOI/páginas).

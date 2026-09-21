@@ -107,15 +107,15 @@ pública anotada para esta tarefa até então \cite{colak2021rsnadataset}, com r
 hierárquicos no nível de corte e de exame.
 
 A maioria dos trabalhos recentes recorre a redes neurais profundas
-\cite{huang2020penet}. Este TP parte de premissa diferente, imposta pelo enunciado da
-disciplina: construir um \emph{baseline} exclusivamente com métodos clássicos ---
-características manuais combinadas a classificadores rasos --- estabelecendo o piso
-de desempenho que uma futura abordagem profunda precisará superar para justificar
-seu custo computacional adicional. Contribuições: (i) um pipeline reprodutível de
-leitura DICOM, pré-processamento e extração de cinco famílias de descritores
-clássicos; (ii) um protocolo sem vazamento de dados (\texttt{StratifiedGroupKFold}
-por paciente); (iii) uma comparação sistemática descritor~$\times$~modelo contra o
-baseline trivial; (iv) discussão das dificuldades intrínsecas do desafio RSNA 2020.
+\cite{huang2020penet}. Este TP parte de premissa diferente, imposta pelo enunciado
+da disciplina: construir um \emph{baseline} exclusivamente com métodos clássicos
+--- características manuais combinadas a classificadores rasos --- estabelecendo o
+piso de desempenho que uma futura abordagem profunda precisará superar.
+Contribuições: (i) pipeline reprodutível de leitura DICOM, pré-processamento e
+extração de cinco famílias de descritores; (ii) protocolo sem vazamento de dados
+(\texttt{StratifiedGroupKFold} por paciente); (iii) comparação sistemática
+descritor~$\times$~modelo contra o baseline trivial; (iv) discussão das
+dificuldades intrínsecas do desafio RSNA 2020.
 
 \section{Trabalhos Relacionados}
 
@@ -142,10 +142,10 @@ Utilizamos o conjunto \emph{RSNA STR Pulmonary Embolism Detection} (2020), hospe
 no Kaggle (7.279 exames de treino; 4.911 negativos e 2.368 positivos para EP). Como
 os rótulos do teste oficial não são públicos, todo o protocolo é construído sobre o
 conjunto de treino, com partição própria (\S\ref{sec:protocolo}). Dado o volume da
-base (\textasciitilde750~GB), a amostra piloto foi extraída em duas rodadas por um
+base (\textasciitilde750~GB), a amostra piloto foi extraída em três rodadas por um
 Kaggle Notebook (dado já residente no servidor, sem download local do conjunto
-completo): 22 exames --- 11 positivos e 11 negativos, sementes fixas (42 e 43) ---
-com 6--15 cortes aleatórios por exame (variável por rodada, limitado pela
+completo): 46 exames --- 23 positivos e 23 negativos, sementes fixas (42, 43, 44)
+--- com 4--15 cortes aleatórios por exame (variável por rodada, limitado pela
 transferência de arquivo do ambiente); critério reprodutível em \texttt{README.md}
 e \texttt{data/raw/real\_sample\_manifest.json}. Cada corte é lido com
 \texttt{pydicom} e convertido para
@@ -160,17 +160,17 @@ seletores, PCA e SMOTE, por outro lado, são encapsulados em
 \texttt{sklearn.Pipeline} e ajustados somente na partição de treino de cada dobra.
 
 \subsection{Extração de características e agregação corte~$\to$~exame}
-Extraímos cinco famílias de descritores por corte: (i) \textbf{textura} --- GLCM/Haralick
-\cite{haralick1973textural} e LBP uniforme \cite{ojala2002lbp}; (ii) \textbf{forma e
-contorno} --- momentos de Hu e propriedades de região; (iii) \textbf{gradiente} ---
-HOG \cite{dalal2005hog}; (iv) \textbf{intensidade} --- histograma e estatísticas de
-ordem superior; (v) \textbf{radiômica} --- subconjunto IBSI via PyRadiomics
-\cite{vangriethuysen2017pyradiomics}. Como a tarefa é volumétrica, agregamos por
-\textbf{pooling estatístico} (média, desvio-padrão, percentil~90 e máximo) das
-características de todos os cortes em um único vetor por exame --- decisão
-justificada pela esparsidade espacial do achado, que descarta a média isolada e
-motiva estatísticas de cauda capazes de capturar o corte mais anômalo. Alternativas
-descartadas (características 2.5D e 3D diretas) são discutidas na Conclusão.
+Extraímos cinco famílias de descritores por corte: (i) \textbf{textura} ---
+GLCM/Haralick \cite{haralick1973textural} e LBP uniforme \cite{ojala2002lbp};
+(ii) \textbf{forma e contorno} --- momentos de Hu e propriedades de região;
+(iii) \textbf{gradiente} --- HOG \cite{dalal2005hog}; (iv) \textbf{intensidade}
+--- histograma e estatísticas de ordem superior; (v) \textbf{radiômica} ---
+subconjunto IBSI via PyRadiomics \cite{vangriethuysen2017pyradiomics}. Agregamos
+por \textbf{pooling estatístico} (média, desvio-padrão, percentil~90 e máximo)
+dos cortes em um vetor por exame --- decisão justificada pela esparsidade
+espacial do achado, que descarta a média isolada e motiva estatísticas de cauda.
+Alternativas descartadas (características 2.5D e 3D diretas) são discutidas na
+Conclusão.
 
 \subsection{Modelagem}
 Implementamos o baseline trivial obrigatório e seis famílias de modelos clássicos:
@@ -195,15 +195,15 @@ desbalanceamento de classes \cite{colak2021rsnadataset}.
 \label{sec:resultados}
 
 \noindent\textit{Nota sobre a amostra (piloto pequeno):} os números abaixo vêm da
-execução real de \texttt{scripts/run\_experiment.py} sobre os 22 exames
+execução real de \texttt{scripts/run\_experiment.py} sobre os 46 exames
 \textbf{reais} descritos em \S3.1, não sintéticos, com ajuste de hiperparâmetros em
-validação aninhada. Com 11 exames por classe, as métricas ainda têm variância
-relevante e \textbf{não devem ser lidas como benchmark definitivo}, mas já são
-suficientes para uma leitura comparativa inicial entre famílias de modelos.
+validação aninhada. Com 23 exames por classe, o quadro já é mais sóbrio e
+representativo do que nos pilotos anteriores ($N{=}6$ e $N{=}22$), mas ainda
+\textbf{não deve ser lido como benchmark definitivo}.
 
 \begin{table}[h]
 \centering
-\caption{Comparação descritor~$\times$~modelo (média~$\pm$~desvio, 5 dobras, 22 exames reais: 11 positivos + 11 negativos).}
+\caption{Comparação descritor~$\times$~modelo (média~$\pm$~desvio, 5 dobras, 46 exames reais: 23 positivos + 23 negativos).}
 \label{tab:resultados}
 \scriptsize
 \renewcommand{\arraystretch}{0.85}
@@ -211,47 +211,47 @@ suficientes para uma leitura comparativa inicial entre famílias de modelos.
 \toprule
 \textbf{Modelo} & \textbf{AUC-ROC} & \textbf{AUC-PR} & \textbf{Bal. Acc.} \\
 \midrule
-Regressão logística    & 0,783 $\pm$ 0,194 & 0,840 $\pm$ 0,183 & 0,633 $\pm$ 0,100 \\
-MLP raso                & 0,767 $\pm$ 0,122 & 0,857 $\pm$ 0,081 & 0,700 $\pm$ 0,194 \\
-$k$-NN                   & 0,600 $\pm$ 0,276 & 0,723 $\pm$ 0,225 & 0,633 $\pm$ 0,251 \\
-SVM (RBF)                 & 0,600 $\pm$ 0,122 & 0,686 $\pm$ 0,112 & 0,500 $\pm$ 0,158 \\
-Random Forest              & 0,575 $\pm$ 0,350 & 0,701 $\pm$ 0,215 & 0,500 $\pm$ 0,279 \\
-Baseline trivial            & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,063 & 0,500 $\pm$ 0,000 \\
-XGBoost                      & 0,300 $\pm$ 0,292 & 0,549 $\pm$ 0,204 & 0,367 $\pm$ 0,145 \\
-SVM (linear)                  & 0,267 $\pm$ 0,162 & 0,514 $\pm$ 0,127 & 0,467 $\pm$ 0,251 \\
+Random Forest               & 0,608 $\pm$ 0,181 & 0,661 $\pm$ 0,137 & 0,575 $\pm$ 0,124 \\
+$k$-NN                       & 0,592 $\pm$ 0,247 & 0,665 $\pm$ 0,200 & 0,590 $\pm$ 0,168 \\
+XGBoost                       & 0,522 $\pm$ 0,186 & 0,602 $\pm$ 0,126 & 0,625 $\pm$ 0,153 \\
+Regressão logística            & 0,518 $\pm$ 0,165 & 0,612 $\pm$ 0,111 & 0,530 $\pm$ 0,099 \\
+Baseline trivial                 & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,050 & 0,500 $\pm$ 0,000 \\
+MLP raso                          & 0,456 $\pm$ 0,162 & 0,555 $\pm$ 0,061 & 0,440 $\pm$ 0,085 \\
+SVM (linear)                       & 0,394 $\pm$ 0,222 & 0,530 $\pm$ 0,111 & 0,535 $\pm$ 0,176 \\
+SVM (RBF)                           & 0,370 $\pm$ 0,121 & 0,504 $\pm$ 0,041 & 0,475 $\pm$ 0,100 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.32\linewidth]{figures/roc_logreg.png}
-\caption{Curva ROC fora-de-dobra da regressão logística (melhor AUC-ROC médio), $N{=}22$.}
+\includegraphics[width=0.32\linewidth]{figures/roc_random_forest.png}
+\caption{Curva ROC fora-de-dobra do Random Forest (melhor AUC-ROC médio), $N{=}46$.}
 \label{fig:roc}
 \end{figure}
 
-Regressão logística e MLP raso ficaram acima do baseline trivial (0,500); XGBoost
-e SVM linear ficaram \emph{abaixo} --- com $N{=}22$ para 8 modelos, alguns
-superajustam às centenas de características extraídas. Matriz de confusão
-fora-de-dobra da regressão logística: 6~VN, 5~FP,
-3~FN, 8~VP (sensibilidade~=~72,7\%, especificidade~=~54,5\%). \textbf{Erro
-qualitativo:} os 8 erros distribuem-se de forma equilibrada entre falsos positivos
-e negativos, sem exame específico como outlier de score extremo --- diferente do
-piloto $N{=}6$, consistente com a hipótese de que mais dados diluem erros
-idiossincráticos de exames individuais.
+Random Forest ($0,608$) e $k$-NN ($0,592$) ficaram acima do baseline trivial
+(0,500), mas por margem modesta; MLP raso e ambos os SVMs ficaram \emph{abaixo}.
+Matriz de confusão fora-de-dobra do Random Forest: 12~VN,
+11~FP, 8~FN, 15~VP (sensibilidade~=~65,2\%, especificidade~=~52,2\%; 19 erros em
+46). \textbf{Erro qualitativo:} taxa de erro alta e sem concentração num subgrupo
+sugere sinal real, porém fraco --- consistente com a ausência de segmentação
+vascular supervisionada e $N$ pequeno para as~$\sim$500 características.
 
 \section{Conclusão}
 
 Este trabalho estabeleceu a infraestrutura completa e reprodutível de um baseline
 clássico para detecção de EP em angio-TC, validado sobre uma amostra piloto
-\textbf{real} de 22 exames (ampliada a partir de um piloto inicial de 6). Regressão
-logística e MLP raso superaram consistentemente o baseline trivial (AUC-ROC~0,78
-e~0,77 vs.\ 0,50); XGBoost e SVM linear ficaram abaixo --- com $N{=}22$ para 8
-modelos, superajuste ainda é esperado. A ausência de segmentação vascular/pulmonar
-supervisionada é a segunda limitação relevante. Trabalho futuro: (i) ampliar a
-amostra para centenas de exames; (ii) seleção de características mais agressiva
-para reduzir superajuste; (iii) comparar contra aprendizado profundo (ex.: réplica
-do PENet \cite{huang2020penet}).
+\textbf{real} de 46 exames (ampliada progressivamente a partir de pilotos de 6 e
+22). O piso observado é modesto: Random Forest, o melhor modelo, atinge
+AUC-ROC~=~0,608 --- acima do acaso, mas longe de um classificador clínico
+utilizável --- e metade dos modelos sequer supera o baseline trivial, exatamente o
+tipo de resultado esperado de um baseline honesto com características
+hand-crafted, sem segmentação vascular, sobre poucas dezenas de exames. Trabalho
+futuro: (i) ampliar a amostra para centenas de exames por classe; (ii) segmentação
+vascular supervisionada como pré-processamento; (iii) comparar este piso contra
+aprendizado profundo (ex.: réplica do PENet \cite{huang2020penet}), que deverá
+superá-lo com folga para justificar seu custo computacional adicional.
 
 \let\oldthebibliography\thebibliography
 \renewcommand\thebibliography[1]{\oldthebibliography{#1}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
