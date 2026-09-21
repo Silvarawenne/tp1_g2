@@ -22,6 +22,7 @@
 \usepackage{url}
 \usepackage{caption}
 \usepackage{titlesec}
+\usepackage{multicol}
 
 % Compactação tipográfica leve (não altera fonte/margens exigidas pelo enunciado):
 % reduz espaçamento antes/depois de títulos de seção e de legendas de tabela/figura,
@@ -67,8 +68,11 @@ Descrevemos o protocolo experimental --- particionamento por paciente, validaç�
 cruzada estratificada e agrupada, métricas apropriadas a um problema clinicamente
 desbalanceado --- e discutimos as dificuldades intrínsecas do desafio: rótulos
 hierárquicos, esparsidade espacial do achado ao longo do volume e variabilidade de
-aquisição entre instituições. O repositório de código, incluindo um pipeline
-validado de ponta a ponta, está disponível publicamente (link na nota de rodapé).
+aquisição entre instituições. Reportamos resultados preliminares sobre uma amostra
+piloto real (6 exames), suficientes para validar o pipeline de ponta a ponta sobre
+dados clínicos genuínos, ainda que insuficientes para conclusões estatísticas
+robustas. O repositório de código está disponível publicamente (link na nota de
+rodapé).
 
 \vspace{0.2cm}
 
@@ -83,9 +87,11 @@ against which future deep-learning approaches must be compared. We describe the
 experimental protocol --- patient-level partitioning, stratified grouped
 cross-validation, metrics appropriate to a clinically imbalanced problem --- and
 discuss the challenges intrinsic to the task: hierarchical labels, spatial sparsity of
-the finding along the volume, and cross-institution acquisition variability. The code
-repository, including an end-to-end validated pipeline, is publicly available (link
-in the footnote).
+the finding along the volume, and cross-institution acquisition variability. We
+report preliminary results on a real pilot sample (6 exams), sufficient to validate
+the end-to-end pipeline on genuine clinical data, though too small for robust
+statistical conclusions. The code repository is publicly available (link in the
+footnote).
 \selectlanguage{brazil}
 
 \footnotetext[0]{Repositório: \url{https://github.com/silvarawenne/tp1_g2} (branch \texttt{claude/laughing-rubin-79l5wt}). \textbf{Uso de IA generativa:} partes do texto e do código foram redigidas com apoio de IA generativa (Claude); revisadas pelo grupo, que assume responsabilidade integral por sua correção, inclusive a verificação bibliográfica das referências.}
@@ -103,46 +109,45 @@ hierárquicos no nível de corte e de exame.
 A maioria dos trabalhos recentes recorre a redes neurais profundas
 \cite{huang2020penet}. Este TP parte de premissa diferente, imposta pelo enunciado da
 disciplina: construir um \emph{baseline} exclusivamente com métodos clássicos ---
-características manuais combinadas a classificadores rasos --- estabelecendo, com
-rigor metodológico, o piso de desempenho que uma futura abordagem profunda precisará
-superar para justificar seu custo computacional adicional. Contribuições: (i) um
-pipeline reprodutível de leitura DICOM, pré-processamento e extração de cinco
-famílias de descritores clássicos; (ii) um protocolo sem vazamento de dados
-(\texttt{StratifiedGroupKFold} por paciente, ajuste de hiperparâmetros em validação
-aninhada); (iii) uma comparação sistemática descritor~$\times$~modelo contra o
-baseline trivial obrigatório; (iv) uma discussão fundamentada das dificuldades
-intrínsecas do desafio RSNA 2020.
+características manuais combinadas a classificadores rasos --- estabelecendo o piso
+de desempenho que uma futura abordagem profunda precisará superar para justificar
+seu custo computacional adicional. Contribuições: (i) um pipeline reprodutível de
+leitura DICOM, pré-processamento e extração de cinco famílias de descritores
+clássicos; (ii) um protocolo sem vazamento de dados (\texttt{StratifiedGroupKFold}
+por paciente); (iii) uma comparação sistemática descritor~$\times$~modelo contra o
+baseline trivial; (iv) discussão das dificuldades intrínsecas do desafio RSNA 2020.
 
 \section{Trabalhos Relacionados}
 
 A literatura de CAD para EP pré-datando o aprendizado profundo já explorava
 características extraídas ao longo de estruturas vasculares segmentadas, com
 classificadores de aprendizado multi-instância \cite{bi2007pemultipleinstance} --- a
-mesma filosofia (características manuais + classificador clássico) adotada aqui,
-ainda que sem a segmentação vascular supervisionada daquele trabalho. As famílias de
-descritores usadas têm fundamentação estabelecida: textura via GLCM/Haralick
-\cite{haralick1973textural} e LBP \cite{ojala2002lbp}; gradiente via HOG
-\cite{dalal2005hog}; radiômica via PyRadiomics/IBSI \cite{vangriethuysen2017pyradiomics}.
-Na modelagem, usamos os algoritmos clássicos mais estabelecidos para dados tabulares
-desbalanceados: SVM \cite{cortes1995svm}, Random Forest
-\cite{breiman2001randomforests}, \emph{gradient boosting} \cite{chen2016xgboost} e
-SMOTE \cite{chawla2002smote}, frente ao desbalanceamento reportado na descrição
-oficial do desafio \cite{colak2021rsnadataset}. Em contraste, trabalhos de ponta
-neste desafio usam redes convolucionais 3D ponta a ponta, como o PENet
+mesma filosofia adotada aqui, ainda que sem a segmentação vascular supervisionada
+daquele trabalho. As famílias de descritores usadas têm fundamentação estabelecida:
+textura via GLCM/Haralick \cite{haralick1973textural} e LBP \cite{ojala2002lbp};
+gradiente via HOG \cite{dalal2005hog}; radiômica via PyRadiomics/IBSI
+\cite{vangriethuysen2017pyradiomics}. Na modelagem, usamos os algoritmos clássicos
+mais estabelecidos para dados tabulares desbalanceados: SVM \cite{cortes1995svm},
+Random Forest \cite{breiman2001randomforests}, \emph{gradient boosting}
+\cite{chen2016xgboost} e SMOTE \cite{chawla2002smote}, frente ao desbalanceamento
+reportado na descrição oficial do desafio \cite{colak2021rsnadataset}. Em contraste,
+trabalhos de ponta neste desafio usam redes convolucionais 3D, como o PENet
 \cite{huang2020penet} --- este TP posiciona-se deliberadamente antes dessa
-fronteira, fornecendo o número de referência contra o qual tais modelos deverão ser
-comparados na fase seguinte do projeto.
+fronteira, como número de referência a ser superado.
 
 \section{Metodologia}
 
 \subsection{Base, amostragem e pré-processamento}
 Utilizamos o conjunto \emph{RSNA STR Pulmonary Embolism Detection} (2020), hospedado
-no Kaggle. Como os rótulos do teste oficial não são públicos, todo o protocolo é
-construído sobre o conjunto de treino, com partição própria (\S\ref{sec:protocolo}).
-Dado o volume da base (centenas de GB), trabalhamos com uma amostra estratificada por
-classe e por paciente, com semente fixa e critério de inclusão documentados no
-\texttt{README.md} -- a amostragem é parte do protocolo, não uma simplificação não
-documentada. Cada corte DICOM é lido com \texttt{pydicom} e convertido para
+no Kaggle (7.279 exames de treino; 4.911 negativos e 2.368 positivos para EP). Como
+os rótulos do teste oficial não são públicos, todo o protocolo é construído sobre o
+conjunto de treino, com partição própria (\S\ref{sec:protocolo}). Dado o volume da
+base (\textasciitilde750~GB), a amostra piloto foi extraída em um Kaggle Notebook
+(dado já residente no servidor, sem download local do conjunto completo): 6 exames
+--- 3 positivos e 3 negativos, semente fixa (42) --- com 15 cortes aleatórios por
+exame, por limite de transferência de arquivo do ambiente; critério reprodutível em
+\texttt{README.md} e \texttt{data/raw/real\_sample\_manifest.json}. Cada corte é
+lido com \texttt{pydicom} e convertido para
 Hounsfield Units (HU) via $\text{HU} = \text{pixel} \times \text{RescaleSlope} +
 \text{RescaleIntercept}$. Aplicamos janelamento mediastinal/EP (centro 100~HU,
 largura 700~HU), que realça o contraste entre o lúmen vascular opacificado e um
@@ -167,83 +172,95 @@ motiva estatísticas de cauda capazes de capturar o corte mais anômalo. Alterna
 descartadas (características 2.5D e 3D diretas) são discutidas na Conclusão.
 
 \subsection{Modelagem}
-Implementamos o baseline trivial obrigatório (classificador de classe majoritária) e
-seis famílias de modelos clássicos: regressão logística regularizada, SVM linear e
-RBF \cite{cortes1995svm}, $k$-NN, Random Forest \cite{breiman2001randomforests},
-\emph{gradient boosting} (XGBoost) \cite{chen2016xgboost} e um MLP raso (uma camada
-oculta). Cada modelo é encapsulado em um \texttt{Pipeline} com padronização,
-seleção/redução de dimensionalidade opcional e SMOTE opcional
-\cite{chawla2002smote}, comparado contra o uso de \texttt{class\_weight='balanced'}.
+Implementamos o baseline trivial obrigatório e seis famílias de modelos clássicos:
+regressão logística regularizada, SVM linear e RBF \cite{cortes1995svm}, $k$-NN,
+Random Forest \cite{breiman2001randomforests}, \emph{gradient boosting} (XGBoost)
+\cite{chen2016xgboost} e um MLP raso. Cada modelo é encapsulado em um
+\texttt{Pipeline} com padronização, seleção/redução opcional e SMOTE opcional
+\cite{chawla2002smote}, comparado contra \texttt{class\_weight='balanced'}.
 
 \subsection{Protocolo experimental e métricas}
 \label{sec:protocolo}
 O particionamento é feito por \textbf{paciente} (nunca por corte ou por exame
-isoladamente), via \texttt{StratifiedGroupKFold} com 5 dobras, semente fixa. O ajuste
-de hiperparâmetros ocorre por busca em grade dentro de uma validação cruzada
-aninhada (agrupada da mesma forma), nunca no conjunto de teste da dobra externa.
-Reportamos AUC-ROC, AUC-PR, sensibilidade, especificidade, F1 e acurácia balanceada,
-com média e desvio-padrão entre dobras --- acurácia isolada não é reportada como
-métrica de desempenho, por ser enganosa em uma base com forte desbalanceamento de
-classes \cite{colak2021rsnadataset}.
+isoladamente), via \texttt{StratifiedGroupKFold} (5 dobras por padrão; a execução
+piloto da Seção~4, com apenas 6 exames, usa 3 dobras, o máximo permitido mantendo ao
+menos um exame de cada classe por dobra de teste), semente fixa. O ajuste de
+hiperparâmetros ocorre por busca em grade dentro de uma validação cruzada aninhada
+(agrupada da mesma forma) quando o tamanho da amostra permite, nunca no conjunto de
+teste da dobra externa. Reportamos AUC-ROC, AUC-PR, sensibilidade, especificidade, F1
+e acurácia balanceada, com média e desvio-padrão entre dobras --- acurácia isolada
+não é reportada como métrica de desempenho, por ser enganosa em uma base com forte
+desbalanceamento de classes \cite{colak2021rsnadataset}.
 
 \section{Resultados}
 \label{sec:resultados}
 
-\noindent\textit{Nota metodológica (remover na versão final):} a
-Tabela~\ref{tab:resultados} foi gerada por \texttt{scripts/run\_experiment.py} sobre
-exames \textbf{sintéticos} (\texttt{src/data/synthetic.py}), pois este ambiente não
-tinha acesso ao Kaggle. Ela comprova que o pipeline executa corretamente de ponta a
-ponta, mas \textbf{não tem valor científico}. Regenerar sobre a amostra real de
-\texttt{data/raw/}, conforme o \texttt{README.md}.
+\noindent\textit{Nota sobre a amostra (piloto pequeno):} os números abaixo vêm da
+execução real de \texttt{scripts/run\_experiment.py} sobre os 6 exames \textbf{reais}
+descritos em \S3.1, não sintéticos. Com apenas 3 exames por classe, as métricas têm
+variância muito alta e \textbf{não devem ser lidas como benchmark definitivo}:
+servem para comprovar que o pipeline extrai sinal real de dados clínicos genuínos.
 
 \begin{table}[h]
 \centering
-\caption{Comparação descritor~$\times$~modelo (média~$\pm$~desvio, 5 dobras). Exemplo sobre dados sintéticos de validação do pipeline --- substituir pelos resultados reais.}
+\caption{Comparação descritor~$\times$~modelo (média~$\pm$~desvio, 3 dobras, 6 exames reais: 3 positivos + 3 negativos).}
 \label{tab:resultados}
-\small
+\scriptsize
 \renewcommand{\arraystretch}{0.85}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Modelo} & \textbf{AUC-ROC} & \textbf{AUC-PR} & \textbf{Bal. Acc.} \\
 \midrule
-Baseline trivial   & 0,500 & 0,250 & 0,500 \\
-Regressão logística & --     & --     & --     \\
-SVM (linear/RBF)    & --     & --     & --     \\
-$k$-NN              & --     & --     & --     \\
-Random Forest        & --     & --     & --     \\
-XGBoost              & --     & --     & --     \\
-MLP raso             & --     & --     & --     \\
+MLP raso              & 1,000 $\pm$ 0,000 & 1,000 $\pm$ 0,000 & 0,833 $\pm$ 0,236 \\
+Random Forest          & 1,000 $\pm$ 0,000 & 1,000 $\pm$ 0,000 & 1,000 $\pm$ 0,000 \\
+Regressão logística    & 0,667 $\pm$ 0,471 & 0,833 $\pm$ 0,236 & 0,667 $\pm$ 0,236 \\
+$k$-NN                 & 0,667 $\pm$ 0,471 & 0,833 $\pm$ 0,236 & 0,667 $\pm$ 0,236 \\
+Baseline trivial        & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 \\
+XGBoost                  & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 \\
+SVM (RBF)                & 0,167 $\pm$ 0,236 & 0,500 $\pm$ 0,000 & 0,500 $\pm$ 0,000 \\
+SVM (linear)             & 0,000 $\pm$ 0,000 & 0,500 $\pm$ 0,000 & 0,667 $\pm$ 0,236 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent As curvas ROC/PR e a matriz de confusão do melhor modelo (geradas
-automaticamente em \texttt{outputs/figures/}) devem ser inseridas aqui a partir da
-execução sobre dados reais, acompanhadas de análise de erro qualitativa (exemplos de
-acerto e falha, com hipóteses de causa) e importância de características por
-permutação.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.27\linewidth]{figures/roc_mlp_raso.png}
+\caption{Curva ROC fora-de-dobra do MLP raso (melhor AUC-ROC médio), $N{=}6$.}
+\label{fig:roc}
+\end{figure}
+
+Random Forest e MLP raso atingiram AUC-ROC~=~1,000, muito acima do baseline trivial
+(0,500); porém SVM linear (0,000) e SVM~RBF (0,167) tiveram desempenho pior que o
+acaso --- evidência de que, com $N{=}6$, o resultado depende de qual exame cai em
+cada dobra, não de mérito real do modelo. Matriz de confusão fora-de-dobra do MLP
+raso: 2~VN, 1~FP, 0~FN, 3~VP (sensibilidade~=~100\%, especificidade~=~66,7\%).
+\textbf{Erro qualitativo:} o único erro foi \texttt{a8bed20c978e} (negativo),
+classificado positivo com confiança máxima --- hipótese: os 15 cortes sorteados
+podem não cobrir a mesma região anatômica dos demais negativos, viés que uma
+amostra maior tende a reduzir.
 
 \section{Conclusão}
 
 Este trabalho estabeleceu a infraestrutura completa e reprodutível de um baseline
-clássico para detecção de EP em angio-TC: leitura/pré-processamento DICOM
-justificados, cinco famílias de descritores hand-crafted, sete modelos (incluindo o
-baseline trivial) e um protocolo sem vazamento de dados. A limitação mais relevante é
-a ausência, neste estágio, de segmentação vascular/pulmonar supervisionada -- usamos
-recorte de margem fixa e limiar de intensidade como proxies de ROI, o que
-provavelmente subestima o desempenho alcançável pelas características de forma e
-radiômicas. Trabalho futuro imediato: (i) substituir os dados sintéticos pela amostra
-real do RSNA STR PE Dataset e reportar os números definitivos na
-Seção~\ref{sec:resultados}; (ii) avaliar características 2.5D como alternativa ao
-pooling estatístico; (iii) comparar este piso clássico contra aprendizado profundo
-(ex.: réplica simplificada do PENet \cite{huang2020penet}) na fase seguinte do
-projeto.
+clássico para detecção de EP em angio-TC, validado sobre uma amostra piloto
+\textbf{real} de 6 exames. Os resultados preliminares confirmam que o pipeline
+extrai sinal genuíno de dados clínicos, mas o $N$ é pequeno demais para conclusões
+comparativas robustas --- a alta variância entre modelos (\S4) é, em si, evidência
+dessa limitação. A ausência de segmentação vascular/pulmonar supervisionada é a
+segunda limitação relevante. Trabalho futuro imediato: (i) ampliar a amostra para
+dezenas de exames por classe, com o mesmo pipeline; (ii) avaliar características
+2.5D como alternativa ao pooling estatístico; (iii) comparar este piso clássico
+contra aprendizado profundo (ex.: réplica do PENet \cite{huang2020penet}).
 
 \let\oldthebibliography\thebibliography
 \renewcommand\thebibliography[1]{\oldthebibliography{#1}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-{\footnotesize
+\setlength{\columnsep}{12pt}
+\begin{multicols}{2}
+{\tiny
 \bibliographystyle{plain}
 \bibliography{references}
 }
+\end{multicols}
 
 \end{document}

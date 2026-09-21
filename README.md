@@ -10,23 +10,28 @@ DICOM, extração de cinco famílias de características hand-crafted, sete mode
 clássicos (incluindo o baseline trivial obrigatório) e um protocolo experimental
 sem vazamento de dados (partição por paciente).
 
-## ⚠️ Leia antes de tudo: sobre os dados usados neste repositório
+## ⚠️ Status atual: piloto real rodado, mas com amostra muito pequena (N=6)
 
-O ambiente usado para montar este repositório **não tinha acesso ao Kaggle**
-(rede corporativa bloqueava `kaggle.com`). Por isso, todo o código foi validado
-de ponta a ponta com um conjunto de **exames DICOM sintéticos** (elipsoides
-gerados por código, sem significado clínico — ver `src/data/synthetic.py`),
-não com os dados reais do desafio.
+O ambiente onde este repositório foi originalmente montado **não tinha acesso ao
+Kaggle** (rede corporativa bloqueava `kaggle.com`). Para contornar isso, a amostra
+real foi extraída **em um Kaggle Notebook** (o dado já reside no servidor do Kaggle,
+sem precisar baixar o conjunto completo — ~750 GB — para uma máquina local) e
+transferida em um zip pequeno (dentro do limite de upload do canal usado).
 
-**O que isso significa na prática:**
-- Todo o pipeline (leitura DICOM → pré-processamento → extração de características
-  → modelagem → avaliação) está implementado, testado e funcional.
-- As tabelas/figuras já geradas em `outputs/` e os números de exemplo em
-  `article/main.tex` (Seção 4, Resultados) vêm dos dados sintéticos — **não têm
-  valor científico** e precisam ser regenerados com os dados reais antes da entrega.
-- O grupo precisa apenas: (1) baixar a amostra real (passo a passo abaixo),
-  (2) gerar um manifesto real no mesmo formato do sintético, (3) rodar
-  `scripts/extract_features.py` e `scripts/run_experiment.py` de novo.
+**O que já foi feito com dados reais (não sintéticos):**
+- 6 exames reais do RSNA STR PE Dataset (3 positivos + 3 negativos), 15 cortes por
+  exame, amostrados de forma aleatória estratificada por classe (semente 42).
+  Critério documentado em `data/raw/real_sample_manifest.json` (não versionado —
+  ver `.gitignore` — mas reproduzível a partir do `train.csv` oficial).
+- Extração real das 5 famílias de características e execução real dos 7 modelos
+  (`scripts/extract_features.py` + `scripts/run_experiment.py`).
+- Os números e a figura no artigo (`article/main.tex`, Seção 4) **são reais**,
+  não fabricados — vêm de `outputs/tables/results_summary.csv` desta execução.
+
+**O que isso NÃO é:** um benchmark robusto. Com apenas 3 exames por classe, os
+resultados têm variância altíssima (alguns modelos com AUC abaixo do acaso) — o
+artigo é explícito sobre isso na Seção 4 e na Conclusão. **Expandir a amostra é a
+próxima prioridade do grupo** (ver checklist ao final).
 
 ## 1. Configuração do ambiente
 
@@ -52,30 +57,36 @@ memória, não precisa de nenhum dado externo):
 python -m pytest tests/ -v
 ```
 
-## 2. Obtendo os dados reais do desafio
+## 2. Como foi obtida a amostra real (e como ampliá-la)
 
-1. Aceite os termos de uso da competição em
+Como o dataset completo (~750 GB) é inviável de baixar em máquina pessoal, e o
+ambiente de desenvolvimento também não tinha acesso ao Kaggle, o caminho usado foi:
+
+1. Aceitar os termos de uso da competição em
    https://www.kaggle.com/c/rsna-str-pulmonary-embolism-detection/rules
-   (usar a conta pessoal de cada integrante — cadastro é responsabilidade do grupo,
-   conforme §2 do enunciado).
-2. Configure a API do Kaggle (`~/.kaggle/kaggle.json`) e baixe os dados:
-   ```bash
-   pip install kaggle
-   kaggle competitions download -c rsna-str-pulmonary-embolism-detection -p data/raw/
-   unzip data/raw/rsna-str-pulmonary-embolism-detection.zip -d data/raw/
-   ```
-   **Atenção:** o conjunto completo tem centenas de GB. Não é necessário (nem
-   esperado) baixar tudo — ver amostragem abaixo.
-3. Construa uma **amostra estratificada** (por classe e por paciente, semente
-   fixa) a partir de `data/raw/train.csv` e de um subconjunto de
-   `StudyInstanceUID`s. Documente aqui o critério de inclusão usado (ex.: N
-   pacientes positivos + N negativos, semente=42) assim que definido — este
-   README deve ser atualizado com o critério real antes da entrega, conforme
-   exigência de reprodutibilidade do enunciado (§4.5).
-4. Gere um manifesto no mesmo formato de `data/sample/synthetic_manifest.json`
-   (lista de objetos com `patient_id`, `study_instance_uid`, `exam_dir`,
-   `pe_present_on_exam`), apontando `exam_dir` para as pastas com os `.dcm`
-   reais baixados.
+   (cadastro/aceite é responsabilidade de cada integrante, conforme §2 do enunciado).
+2. Criar um **Kaggle Notebook** a partir da página da competição (aba **Code → New
+   Notebook**) — o dataset fica disponível em
+   `/kaggle/input/competitions/rsna-str-pulmonary-embolism-detection/` sem download
+   local algum.
+3. Rodar, dentro do notebook, um script que: lê `train.csv`, agrupa por
+   `StudyInstanceUID` (rótulo = `1 - negative_exam_for_pe`), seleciona uma amostra
+   estratificada por classe com semente fixa, copia um subconjunto de cortes por
+   exame para `/kaggle/working/`, e compacta em zip.
+4. Baixar apenas esse zip pequeno (não o dataset inteiro) e trazer para este
+   repositório em `data/raw/`.
+
+**Para ampliar a amostra atual (N=6) para dezenas de exames por classe**, repita o
+mesmo processo aumentando `N_POSITIVE`/`N_NEGATIVE` no notebook — o script já
+existente neste histórico gera o zip, verifica o tamanho antes de baixar e ajusta
+automaticamente o número de cortes por exame para caber no limite de transferência
+disponível. Quanto maior a amostra, mais estável e representativo o protocolo de
+validação cruzada (hoje limitado a 3 dobras pelo N pequeno — ver `src/config.py` e
+`scripts/run_experiment.py --n-splits`).
+
+O manifesto de um lote de amostra real deve seguir o formato de
+`data/sample/synthetic_manifest.json` (lista de objetos com `patient_id`,
+`study_instance_uid`, `exam_dir`, `pe_present_on_exam`).
 
 ## 3. Rodando o pipeline completo
 
@@ -83,14 +94,15 @@ python -m pytest tests/ -v
 # 0) (opcional) gerar dados sintéticos de exemplo, só para validar o pipeline
 python scripts/generate_synthetic_sample.py
 
-# 1) extrair características (troque --manifest/--data-root para os dados reais)
+# 1) extrair características (exemplo com a amostra real de 6 exames já usada)
 python scripts/extract_features.py \
-    --manifest data/sample/synthetic_manifest.json \
-    --data-root data/sample/synthetic \
-    --out outputs/tables/features.parquet
+    --manifest data/raw/real_sample_manifest.json \
+    --data-root data/raw/real_sample_pilot \
+    --out outputs/tables/features_real_pilot.parquet
 
 # 2) treinar e avaliar todos os modelos (baseline trivial + 6 clássicos)
-python scripts/run_experiment.py --features outputs/tables/features.parquet --n-splits 5 --tune
+# --n-splits 3 porque N=6 (3 por classe); ao ampliar a amostra, usar --n-splits 5 (padrão) e --tune
+python scripts/run_experiment.py --features outputs/tables/features_real_pilot.parquet --n-splits 3
 ```
 
 Saídas geradas:
@@ -100,16 +112,18 @@ Saídas geradas:
   `confusion_matrix_<modelo>.png` — para o melhor modelo (maior AUC-ROC médio).
 - `outputs/models/<modelo>.joblib` — modelos finais serializados.
 
-Depois de rodar sobre os dados reais, **copie os números de
-`outputs/tables/results_summary.csv` para a Tabela 1 de `article/main.tex`** e
-insira as figuras geradas, removendo a "Nota metodológica" da Seção 4.
+Ao rodar sobre uma amostra maior, copie os números atualizados de
+`outputs/tables/results_summary.csv` para a Tabela 1 de `article/main.tex`, troque
+a figura em `article/figures/roc_<modelo>.png` pela nova, e recompile
+(`pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex`,
+conferindo o limite de 4 páginas).
 
 ## 4. EDA
 
 `notebooks/01_eda.ipynb` — distribuição de classes, metadados DICOM, exemplos
 visuais por classe. Por padrão lê o manifesto sintético; troque
-`MANIFEST_PATH`/`DATA_ROOT` no notebook para os dados reais assim que
-disponíveis.
+`MANIFEST_PATH`/`DATA_ROOT` no notebook para `data/raw/real_sample_manifest.json`
+para usar a amostra real.
 
 ## 5. Estrutura do repositório
 
@@ -124,7 +138,7 @@ scripts/               # scripts executáveis (CLI) que usam src/
 notebooks/             # EDA
 tests/                  # smoke test de ponta a ponta (pytest)
 references/            # fichamento de referências (references/fichamento.md)
-article/                # artigo científico (main.tex, references.bib, main.pdf)
+article/                # artigo científico (main.tex, references.bib, main.pdf, figures/)
 docs/                    # Anexo A — tabela de contribuição individual
 data/raw/, data/sample/  # dados (não versionados — ver .gitignore)
 outputs/                 # tabelas/figuras/modelos gerados (não versionados)
@@ -139,34 +153,44 @@ outputs/                 # tabelas/figuras/modelos gerados (não versionados)
 - Todo pré-processamento que aprende parâmetros dos dados (normalização, PCA,
   seleção de características, SMOTE) está dentro de `sklearn.Pipeline`,
   ajustado somente na partição de treino de cada dobra.
-- Dados brutos não são versionados (`data/raw/`, `data/sample/` estão no
-  `.gitignore`); apenas o código que os gera/consome está no repositório.
+- Dados brutos (sintéticos ou reais) não são versionados (`data/raw/`,
+  `data/sample/` estão no `.gitignore`, inclusive por respeito aos termos de uso
+  do Kaggle, que proíbem redistribuir os dados da competição); apenas o código que
+  os gera/consome, e os resultados agregados (tabelas/figuras publicadas no
+  artigo), estão no repositório.
 - Ambiente testado: Python 3.11, dependências em `requirements.txt`.
 
 ## 7. Uso de IA generativa
 
 Partes deste repositório (estruturação inicial do pipeline, código de
-extração de características e modelagem, redação de trechos do artigo e o
-fichamento crítico de referências) foram produzidas com apoio de IA
-generativa (Claude), a pedido do grupo, dada a natureza extensa do trabalho e
-o prazo. Todo o código foi executado e validado (testes de fumaça, ver
-`tests/`) e todo o texto foi revisado pelo grupo, que assume responsabilidade
-integral por sua correção — **incluindo a verificação bibliográfica das
-referências citadas em `references/fichamento.md` e `article/references.bib`**,
-já que a IA não teve acesso à internet neste ambiente para checagem cruzada
-via DOI/CrossRef. Esta declaração também consta em nota de rodapé no artigo
-(`article/main.tex`), conforme exigido pelo enunciado (§6).
+extração de características e modelagem, redação de trechos do artigo, o
+fichamento crítico de referências, e a condução guiada da extração da amostra
+real via Kaggle Notebook) foram produzidas com apoio de IA generativa (Claude), a
+pedido do grupo, dada a natureza extensa do trabalho e o prazo. Todo o código foi
+executado e validado (testes de fumaça em `tests/`, e execução real sobre dados
+reais documentada acima) e todo o texto foi revisado pelo grupo, que assume
+responsabilidade integral por sua correção — **incluindo a verificação
+bibliográfica das referências citadas em `references/fichamento.md` e
+`article/references.bib`**, já que a IA não teve acesso à internet neste ambiente
+para checagem cruzada via DOI/CrossRef (a busca web usada para confirmar a
+legitimidade da competição Kaggle é uma exceção documentada, não usada para
+verificar bibliografia). Esta declaração também consta em nota de rodapé no
+artigo (`article/main.tex`), conforme exigido pelo enunciado (§6).
 
-## 8. Pendências antes da entrega final (checklist do grupo)
+## 8. Checklist do grupo antes da entrega final
 
-- [ ] Cadastro e aceite dos termos de uso do desafio no Kaggle (todos os integrantes).
-- [ ] Definir e documentar o critério de amostragem estratificada sobre os dados reais.
-- [ ] Gerar o manifesto real e rodar `extract_features.py` + `run_experiment.py`.
-- [ ] Substituir a Tabela 1 e inserir as Figuras (ROC/PR, matriz de confusão) reais no artigo.
-- [ ] Adicionar análise de erro qualitativa e importância de características (permutação).
+- [x] Cadastro e aceite dos termos de uso do desafio no Kaggle.
+- [x] Amostra real extraída e documentada (piloto pequeno, N=6).
+- [x] Pipeline executado de ponta a ponta sobre dados reais; resultados reais no artigo.
+- [x] Ao menos uma figura (curva ROC) e análise de erro qualitativa no artigo.
+- [x] Limite de 4 páginas do artigo (conferido após inserir os resultados reais).
+- [ ] **Ampliar a amostra real** para dezenas de exames por classe (prioridade nº 1
+      — os resultados atuais têm N pequeno demais para serem conclusivos; repetir
+      o processo da Seção 2 com `N_POSITIVE`/`N_NEGATIVE` maiores).
+- [ ] Reexecutar `extract_features.py` + `run_experiment.py --n-splits 5 --tune`
+      sobre a amostra ampliada e atualizar Tabela 1/Figura 1 do artigo.
 - [ ] Verificar bibliograficamente cada referência de `references/fichamento.md` (DOI/páginas).
-- [ ] Expandir para o mínimo de 10 leituras fichadas conforme a pesquisa avançar (Semanas 2–3).
+- [ ] Expandir para leituras adicionais conforme a pesquisa avançar (Semanas 2–3).
 - [ ] Preencher e assinar o Anexo A (`docs/anexo_a_contribuicao.md`), gerar o PDF separado.
 - [ ] Testar reprodutibilidade em máquina/ambiente limpo, seguindo só este README.
-- [ ] Publicar o repositório (ou liberar acesso ao professor) e conferir o link no artigo.
-- [ ] Conferir limite de 4 páginas do artigo após inserir os resultados reais.
+- [ ] Confirmar que o link do repositório no artigo está correto e acessível ao professor.

@@ -44,6 +44,19 @@ class SafeSMOTE(SMOTE):
         self.k_neighbors = max(1, min(5, minority_count - 1))
         return super()._fit_resample(X, y)
 
+
+class SafeKNN(KNeighborsClassifier):
+    """k-NN que reduz automaticamente `n_neighbors` quando a dobra de treino
+    (já pós-SMOTE) tem menos exemplos do que o k configurado, em vez de lançar
+    erro — mesmo racional do SafeSMOTE, necessário em amostras piloto muito
+    pequenas (ex.: poucos exames reais coletados manualmente).
+    """
+
+    def fit(self, X, y):
+        self.n_neighbors = max(1, min(self.n_neighbors, len(X) - 1))
+        return super().fit(X, y)
+
+
 try:
     from xgboost import XGBClassifier
 
@@ -90,7 +103,7 @@ def build_model_zoo(use_smote: bool = True) -> dict[str, ImbPipeline]:
             use_smote=use_smote,
         ),
         "knn": _with_preprocessing(
-            KNeighborsClassifier(n_neighbors=5, weights="distance"),
+            SafeKNN(n_neighbors=5, weights="distance"),
             use_smote=use_smote,
         ),
         "random_forest": _with_preprocessing(
@@ -98,7 +111,10 @@ def build_model_zoo(use_smote: bool = True) -> dict[str, ImbPipeline]:
             use_smote=use_smote,
         ),
         "mlp_raso": _with_preprocessing(
-            MLPClassifier(hidden_layer_sizes=(32,), max_iter=1000, early_stopping=True, random_state=SEED),
+            # early_stopping=False: com amostras muito pequenas (ex.: amostra piloto),
+            # a divisão de validação interna do early stopping pode falhar por não
+            # ter exemplos suficientes de cada classe; max_iter já limita o custo.
+            MLPClassifier(hidden_layer_sizes=(32,), max_iter=1000, early_stopping=False, random_state=SEED),
             use_smote=use_smote,
         ),
     }
